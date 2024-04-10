@@ -1,3 +1,4 @@
+import 'package:ball_tracker/app/data/detected_object.dart';
 import 'package:ball_tracker/app/utils/image_utils.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +8,7 @@ import 'package:image/image.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 
 class HomeController extends GetxController {
+  static const inputSize = 300;
   final count = 0.obs;
 
   final cameraController = Rx<CameraController?>(null);
@@ -21,6 +23,9 @@ class HomeController extends GetxController {
   List<String> _labels = [];
 
   bool predicting = false;
+
+  final _detectedObjects = Rx<List<DetectedObject>>([]);
+  List<DetectedObject> get detectedObjects => _detectedObjects.value;
 
   @override
   void onInit() async {
@@ -66,7 +71,7 @@ class HomeController extends GetxController {
     }
 
     final image = await convertCameraImageToImage(cameraImage);
-    final imageInput = copyResize(image!, width: 300, height: 300);
+    final imageInput = copyResize(image!, width: inputSize, height: inputSize);
     final imageMatrix = List.generate(
       imageInput.height,
       (y) => List.generate(
@@ -82,8 +87,22 @@ class HomeController extends GetxController {
       [imageMatrix]
     ], outputs);
 
-    debugPrint(outputs.toString());
+    final height = Get.width * (cameraImage.height / cameraImage.width);
+    _detectedObjects.value = List.generate(
+      10,
+      (i) => DetectedObject(
+        left: (outputs[0] as List)[0][i][1] * Get.width,
+        top: (outputs[0] as List)[0][i][0] * height,
+        width: ((outputs[0] as List)[0][i][3] - (outputs[0] as List)[0][i][1]) *
+            Get.width,
+        height:
+            ((outputs[0] as List)[0][i][2] - (outputs[0] as List)[0][i][0]) *
+                height,
+        name: _labels[(outputs[1] as List)[0][i].toInt()],
+        score: (outputs[2] as List)[0][i],
+      ),
+    );
 
-    // predicting = false;
+    predicting = false;
   }
 }

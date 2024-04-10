@@ -20,7 +20,7 @@ class HomeView extends StatelessWidget {
         width: Get.width,
         child: Obx(() {
           if (controller.isCameraInitialized) {
-            return CameraPreview(controller.cameraController.value!!);
+            return CameraPreview(controller.cameraController.value!);
           } else {
             return const SizedBox.shrink();
           }
